@@ -1,5 +1,16 @@
 
+#[derive(Debug)]
+struct User {
+    id: u32,
+    name: String,
+    email: String
+}
 
+impl User {
+    fn greeting(&self){
+        println!("Good Morning {}", self.name);
+    }
+}
 
 fn main() {
     let ar = [20, 30, 3, 2, 40];
@@ -11,6 +22,15 @@ fn main() {
     }
 
     println!("{:?}", sort_array(&ar));
+
+    let user1 = User {
+        id: 10,
+        name: "Hadiuzzaman".to_string(),
+        email: "zhhadi50@gmail.com".to_string()
+    };
+
+    println!("{:?}", user1);
+    user1.greeting();
 }
 
 
