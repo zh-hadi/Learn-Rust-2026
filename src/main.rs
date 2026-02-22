@@ -31,6 +31,12 @@ fn main() {
 
     println!("{:?}", user1);
     user1.greeting();
+
+    let name = "hadiuzzaman".to_string();
+
+    for c in name.chars() {
+        println!("{c}");
+    }
 }
 
 
