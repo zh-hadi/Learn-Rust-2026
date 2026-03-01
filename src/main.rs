@@ -1,16 +1,19 @@
+use std::io;
+
 
 
 fn main(){
-    let s1 = "hello";
-    let s2 = "world";
-    let mut s3 = format!("{} {}", s1, s2);
 
-    for c in s3.chars() {
-        println!("{}", c);
-    }
+   let mut input = String::new();
+   
+   io::stdin().read_line(&mut input).expect("read line error occors here");
 
-    s3.push('!');
-    s3.push_str(" 2026");
+   let data: Vec<i32> = input
+                            .trim()
+                            .split(",")
+                            .map(|x| x.trim())
+                            .map(|x| x.parse::<i32>().unwrap())
+                            .collect();
 
-    println!("{}", s3);
+   println!("{:?}", data);
 }
