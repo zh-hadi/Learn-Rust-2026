@@ -1,19 +1,33 @@
-use std::io;
 
+struct  User {
+   name: String,
+   age: i32,
+}
 
+impl User {
+   fn new(name: String, age: i32)-> User {
+      User {
+         name: name,
+         age: age
+      }
+   }
+
+   fn veiw_user_info(&self)
+   {
+      println!("user name: {}", self.name);
+      println!("user age: {}", self.age);
+   }
+
+   fn dummy(){
+      println!("dummy method this is ");
+   }
+}
 
 fn main(){
 
-   let mut input = String::new();
+   let user1 = User::new("Hadiuzzaman".to_string(), 25);
+   user1.veiw_user_info();
    
-   io::stdin().read_line(&mut input).expect("read line error occors here");
-
-   let data: Vec<i32>= input
-                            .trim()
-                            .split(",")
-                            .map(|x| x.trim())
-                            .filter_map(|x| x.parse::<i32>().ok())
-                            .collect();
-
-   println!("{:?}", data);
+   User::dummy();
+   
 }
