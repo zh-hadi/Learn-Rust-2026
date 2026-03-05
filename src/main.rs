@@ -1,33 +1,58 @@
+use axum::{
+   routing::get,
+   Router,
+   Json
+};
+use serde::{Deserialize, Serialize};
+use serde_json::{Value,json};
 
-struct  User {
+#[derive(Serialize, Deserialize, Debug)]
+struct User {
+   id: i32,
    name: String,
-   age: i32,
+   email: String,
 }
 
-impl User {
-   fn new(name: String, age: i32)-> User {
+#[tokio::main]
+async fn main() {
+
+   let app = Router::new().route("/", get(greeting))
+                                 .route("/users", get(users));
+
+   
+   let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+   axum::serve(listener, app).await.unwrap();
+}
+
+async fn greeting()-> String
+{
+   "Hello world!".to_string()
+}
+
+async fn users()-> Json<Vec<User>>
+{
+   let user1 =  User{
+      id: 1,
+      name: "hadiuzzaman".to_string(),
+      email: "zhhadi50@gmail.com".to_string()
+   };
+   let user: Vec<User> = vec![
       User {
-         name: name,
-         age: age
+         id: 1,
+         name: "ab".to_string(),
+         email: "ab@g.c".to_string()
+      },
+      User {
+         id: 2,
+         name: "hadi1c".to_string(),
+         email: "hadi2@g.c".to_string()
       }
-   }
+   ];
 
-   fn veiw_user_info(&self)
-   {
-      println!("user name: {}", self.name);
-      println!("user age: {}", self.age);
-   }
+   let str = serde_json::to_string(&user1).unwrap();
 
-   fn dummy(){
-      println!("dummy method this is ");
-   }
-}
-
-fn main(){
-
-   let user1 = User::new("Hadiuzzaman".to_string(), 25);
-   user1.veiw_user_info();
-   
-   User::dummy();
-   
+   println!("{:?}", user1);
+   println!("{}", str);
+   // "all users".to_string()
+   Json(user)
 }
