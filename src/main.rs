@@ -17,7 +17,8 @@ struct User {
 async fn main() {
 
    let app = Router::new().route("/", get(greeting))
-                                 .route("/users", get(users));
+                                 .route("/users", get(users))
+                                 .route("/str", get(str_test));
 
    
    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -55,4 +56,15 @@ async fn users()-> Json<Vec<User>>
    println!("{}", str);
    // "all users".to_string()
    Json(user)
+}
+
+async fn str_test()->String
+{
+   let st = "name".to_string();
+   let st1 = " is hadiuzzaman".to_string();
+
+   let st2 = st + &st1;
+   let st3 = format!("{} {}", st1, st2);
+
+   st3
 }
