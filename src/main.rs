@@ -4,11 +4,18 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct User {
    id: i32,
    name: String,
    email: String,
+}
+
+#[derive(Serialize)]
+struct ApiResponse<T> {
+   status: bool,
+   data: T,
+   message: String
 }
 
 #[tokio::main]
@@ -75,5 +82,19 @@ async fn res_test(uri: Uri)->impl IntoResponse
 
    let number = vec![10, 20, 30, 40];
 
-   (StatusCode::SERVICE_UNAVAILABLE, format!("web path: {}", uri.path()))
+   let user = User {
+      name: "hadiuzzaman".to_string(),
+      email: "ab@gmail.com".to_string(),
+      id: 25,
+   };
+
+   let users = vec![user.clone(), user.clone()];
+
+   let api_response = ApiResponse {
+      status: true,
+      data: users,
+      message: "all user view successfully!".to_string()
+   };
+
+   (StatusCode::NOT_FOUND, Json(api_response))
 }
