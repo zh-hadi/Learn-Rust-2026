@@ -1,7 +1,5 @@
 use axum::{
-   routing::get,
-   Router,
-   Json
+   Json, Router, http::{StatusCode, Uri}, response::IntoResponse, routing::get
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -70,12 +68,12 @@ async fn str_test()->String
    st3
 }
 
-async fn res_test()->Json<Value>
+async fn res_test(uri: Uri)->impl IntoResponse
 {
    let name = "hadiuzzman hadi".to_string();
    let name = "shohag hossen".to_string();
 
    let number = vec![10, 20, 30, 40];
 
-   Json(json!({"name":name, "data": number}))
+   (StatusCode::SERVICE_UNAVAILABLE, format!("web path: {}", uri.path()))
 }
