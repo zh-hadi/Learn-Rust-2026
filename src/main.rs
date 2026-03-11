@@ -18,7 +18,8 @@ async fn main() {
 
    let app = Router::new().route("/", get(greeting))
                                  .route("/users", get(users))
-                                 .route("/str", get(str_test));
+                                 .route("/str", get(str_test))
+                                 .route("/data", get(res_test));
 
    
    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -67,4 +68,14 @@ async fn str_test()->String
    let st3 = format!("{} {}", st1, st2);
 
    st3
+}
+
+async fn res_test()->Json<Value>
+{
+   let name = "hadiuzzman hadi".to_string();
+   let name = "shohag hossen".to_string();
+
+   let number = vec![10, 20, 30, 40];
+
+   Json(json!({"name":name, "data": number}))
 }
