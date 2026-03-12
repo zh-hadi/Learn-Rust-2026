@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use axum::{
-   Json, Router, http::{StatusCode, Uri}, response::IntoResponse, routing::get, extract::{ Path},
+   Json, Router, extract::{ Path, Query}, http::{StatusCode, Uri}, response::IntoResponse, routing::get
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -25,7 +27,8 @@ async fn main() {
                                  .route("/users", get(users))
                                  .route("/str", get(str_test))
                                  .route("/data", get(res_test))
-                                 .route("/path", get(path_test));
+                                 .route("/path", get(path_test))
+                                 .route("/query", get(path_query));
 
    
    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -104,4 +107,11 @@ async fn res_test(uri: Uri)->impl IntoResponse
 async fn path_test(Json(payload): Json<User>)-> impl IntoResponse
 {
    (StatusCode::ACCEPTED, Json(payload))
+}
+
+async fn path_query(Query(params): Query<HashMap<String, String>>)-> impl IntoResponse
+{
+   println!("{:?}", params);
+
+   (StatusCode::ACCEPTED, "query is ok".to_string())
 }
