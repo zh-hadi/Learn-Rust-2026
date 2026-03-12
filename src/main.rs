@@ -1,5 +1,5 @@
 use axum::{
-   Json, Router, http::{StatusCode, Uri}, response::IntoResponse, routing::get
+   Json, Router, http::{StatusCode, Uri}, response::IntoResponse, routing::get, extract::{ Path},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -24,7 +24,8 @@ async fn main() {
    let app = Router::new().route("/", get(greeting))
                                  .route("/users", get(users))
                                  .route("/str", get(str_test))
-                                 .route("/data", get(res_test));
+                                 .route("/data", get(res_test))
+                                 .route("/path", get(path_test));
 
    
    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -97,4 +98,10 @@ async fn res_test(uri: Uri)->impl IntoResponse
    };
 
    (StatusCode::NOT_FOUND, Json(api_response))
+}
+
+
+async fn path_test(Json(payload): Json<User>)-> impl IntoResponse
+{
+   (StatusCode::ACCEPTED, Json(payload))
 }
