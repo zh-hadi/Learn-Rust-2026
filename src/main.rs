@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use axum::{
-   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::get
+   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -12,6 +12,12 @@ struct User {
    id: i32,
    name: String,
    email: String,
+}
+
+#[derive(Serialize, Deserialize, sqlx::FromRow)]
+struct Todo {
+   id: i32,
+   data: String
 }
 
 #[derive(Serialize)]
@@ -34,7 +40,8 @@ async fn main() {
                                  .route("/data", get(res_test))
                                  .route("/path", get(path_test))
                                  .route("/query", get(path_query))
-                                 .route("/todos", get(todos_list))
+                                 .route("/todos", get(todos_list).post(create_todo))
+                                 .route("/todos/{id}", get(todos_get))
                                  .with_state(pool);
 
    
@@ -129,7 +136,7 @@ async fn todos_list(
    State(pool): State<MySqlPool>
 ) -> impl IntoResponse {
 
-   let todos = sqlx::query_as::<_, (i32, String)>(
+   let todos = sqlx::query_as::<_, Todo>(
        "SELECT id, data FROM todo"
    )
    .fetch_all(&pool)
@@ -141,5 +148,42 @@ async fn todos_list(
            StatusCode::INTERNAL_SERVER_ERROR,
            "Database error"
        ).into_response(),
+   }
+}
+
+async fn todos_get(State(pool): State<MySqlPool>, Path(id): Path<i32>)->impl IntoResponse
+{
+   let query = "SELECT * FROM todo WHERE id = ?";
+   let todo = sqlx::query_as::<_, Todo>(query).bind(id).fetch_one(&pool).await;
+
+   match todo {
+      Ok(data) => (StatusCode::OK, Json(data)).into_response(),
+      Err(_) => (
+         StatusCode::INTERNAL_SERVER_ERROR,
+         "Database error"
+      ).into_response(),
+   }
+}
+
+async fn create_todo(
+   State(pool): State<MySqlPool>,
+   Json(payload): Json<Todo>
+)->impl IntoResponse 
+{
+   let query = "INSERT INTO todo(data) VALUES (?)";
+
+   let result = sqlx::query(query)
+      .bind(payload.data)
+      .execute(&pool)
+      .await;
+
+   match result {
+      Ok(res) => {
+         (StatusCode::CREATED, res.last_insert_id().to_string()).into_response()
+      },
+      Err(_) => (
+         StatusCode::INTERNAL_SERVER_ERROR,
+         "wrong data insert"
+      ).into_response()
    }
 }
