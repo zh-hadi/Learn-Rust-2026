@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use axum::{
-   Json, Router, extract::{ Path, Query}, http::{StatusCode, Uri}, response::IntoResponse, routing::get
+   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::get
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
+use sqlx::{ MySqlPool};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct User {
@@ -23,12 +24,18 @@ struct ApiResponse<T> {
 #[tokio::main]
 async fn main() {
 
+   let db = "mysql://root:@localhost/todo_app";
+
+   let pool = MySqlPool::connect(&db).await.expect("db connections failed!");
+
    let app = Router::new().route("/", get(greeting))
                                  .route("/users", get(users))
                                  .route("/str", get(str_test))
                                  .route("/data", get(res_test))
                                  .route("/path", get(path_test))
-                                 .route("/query", get(path_query));
+                                 .route("/query", get(path_query))
+                                 .route("/todos", get(todos_list))
+                                 .with_state(pool);
 
    
    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -114,4 +121,25 @@ async fn path_query(Query(params): Query<HashMap<String, String>>)-> impl IntoRe
    println!("{:?}", params);
 
    (StatusCode::ACCEPTED, "query is ok".to_string())
+}
+
+
+
+async fn todos_list(
+   State(pool): State<MySqlPool>
+) -> impl IntoResponse {
+
+   let todos = sqlx::query_as::<_, (i32, String)>(
+       "SELECT id, data FROM todo"
+   )
+   .fetch_all(&pool)
+   .await;
+
+   match todos {
+       Ok(data) => (StatusCode::OK, Json(data)).into_response(),
+       Err(_) => (
+           StatusCode::INTERNAL_SERVER_ERROR,
+           "Database error"
+       ).into_response(),
+   }
 }
