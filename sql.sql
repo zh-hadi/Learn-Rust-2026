@@ -9,3 +9,4 @@ INSERT INTO `todo`( `data`) VALUES ('today start rust hard-way'), ('today is bad
 
 SELECT id, data FROM `todo`;
 DELETE FROM todo WHERE id = 5;
+UPDATE todo SET data = "today is good day" WHERE id = 2;

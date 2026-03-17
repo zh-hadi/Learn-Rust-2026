@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use axum::{
-   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{delete, get, post}
+   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{delete, get, post, put}
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -18,6 +18,13 @@ struct User {
 struct Todo {
    id: i32,
    data: String
+}
+
+#[derive(Serialize)]
+struct TodoResponse <T> {
+   status: bool,
+   message: String,
+   data: T
 }
 
 #[derive(Serialize)]
@@ -43,6 +50,7 @@ async fn main() {
                                  .route("/todos", get(todos_list).post(create_todo))
                                  .route("/todos/{id}", get(todos_get))
                                  .route("/todos/{id}", delete(todos_delete))
+                                 .route("/todos/{id}/update", put(todos_update_handler))
                                  .with_state(pool);
 
    
@@ -204,11 +212,83 @@ async fn todos_delete(
 
    match result {
       Ok(value) =>{
-       (StatusCode::OK, "delete successfully!".to_string()).into_response()
+         if value.rows_affected() == 0 {
+
+            let res = TodoResponse {
+               status: false,
+               message: format!("Todos this id {} not found", id),
+               data: "todos not found".to_string()
+            };
+
+            (StatusCode::NOT_FOUND, Json(res))
+         }else {
+            let res = TodoResponse {
+               status: true,
+               message: format!("Todos deleted id {}", id),
+               data: "".to_string()
+            };
+
+            (StatusCode::OK, Json(res))
+         }
       },
       Err(_) => {
-         (StatusCode::SERVICE_UNAVAILABLE, "something went wrong to delete data".to_string()).into_response()
+         let res = TodoResponse {
+            status: false,
+            message: format!("Todos this id {} not found", id),
+            data: "something went wrong to delete data".to_string()
+         };
+
+         (StatusCode::SERVICE_UNAVAILABLE, Json(res))
+         
       }
          
+   }
+}
+
+
+async fn todos_update_handler(
+   State(pool): State<MySqlPool>,
+   Json(payload): Json<Todo>
+)-> impl IntoResponse
+{
+   let query = "UPDATE todo SET data = ? WHERE id = ?";
+
+   let result = sqlx::query(query)
+                        .bind(&payload.data)
+                        .bind(payload.id)
+                        .execute(&pool)
+                        .await;
+   
+   match result {
+      Ok(value)=> {
+         if value.rows_affected() == 0 {
+            let res = TodoResponse{
+               status: false,
+               message: format!("Todo with id {} not found", payload.id),
+               data: "".to_string()
+            };
+
+            (StatusCode::NOT_FOUND, Json(res))
+         }else {
+            let res = TodoResponse {
+               status: true,
+               message: format!("Todo with id {} update Successfully!", payload.id),
+               data: payload.data,
+            };
+
+            (StatusCode::OK, Json(res))
+         }
+      },
+      Err(err) => {
+         eprintln!("Update error: {:?}", err);
+
+         let res = TodoResponse {
+            status: false,
+            message: "Failed to update todo!".to_string(),
+            data: "".to_string()
+         };
+
+         (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+      }
    }
 }
