@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use axum::{
-   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{get, post}
+   Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{delete, get, post}
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
@@ -42,6 +42,7 @@ async fn main() {
                                  .route("/query", get(path_query))
                                  .route("/todos", get(todos_list).post(create_todo))
                                  .route("/todos/{id}", get(todos_get))
+                                 .route("/todos/{id}", delete(todos_delete))
                                  .with_state(pool);
 
    
@@ -185,5 +186,29 @@ async fn create_todo(
          StatusCode::INTERNAL_SERVER_ERROR,
          "wrong data insert"
       ).into_response()
+   }
+}
+
+
+async fn todos_delete(
+   Path(id): Path<i32>,
+   State(pool): State<MySqlPool>
+)->impl IntoResponse
+{
+   let query = "DELETE FROM todo WHERE id = ?";
+
+   let result = sqlx::query(query)
+                     .bind(id)
+                     .execute(&pool)
+                     .await;
+
+   match result {
+      Ok(value) =>{
+       (StatusCode::OK, "delete successfully!".to_string()).into_response()
+      },
+      Err(_) => {
+         (StatusCode::SERVICE_UNAVAILABLE, "something went wrong to delete data".to_string()).into_response()
+      }
+         
    }
 }

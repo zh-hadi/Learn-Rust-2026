@@ -8,3 +8,4 @@ CREATE TABLE `todo` (
 INSERT INTO `todo`( `data`) VALUES ('today start rust hard-way'), ('today is bad day');
 
 SELECT id, data FROM `todo`;
+DELETE FROM todo WHERE id = 5;
