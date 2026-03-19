@@ -3,9 +3,18 @@ use std::collections::HashMap;
 use axum::{
    Json, Router, extract::{ Path, Query, State}, http::{StatusCode, Uri}, response::IntoResponse, routing::{delete, get, post, put}
 };
+use::jsonwebtoken::{encode, decode, EncodingKey, DecodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value,json};
 use sqlx::{ MySqlPool};
+use chrono::{Utc, Duration};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Claims {
+   name: String,
+   email: String,
+   exp: usize,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct User {
@@ -51,6 +60,8 @@ async fn main() {
                                  .route("/todos/{id}", get(todos_get))
                                  .route("/todos/{id}", delete(todos_delete))
                                  .route("/todos/{id}/update", put(todos_update_handler))
+                                 .route("/encode", get(encode_test))
+                                 .route("/decode", get(decode_test))
                                  .with_state(pool);
 
    
@@ -291,4 +302,53 @@ async fn todos_update_handler(
          (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
       }
    }
+}
+
+
+
+async fn encode_test()-> impl IntoResponse
+{
+   let claims_data = Claims{
+      name: "hadiuzzaman".to_string(),
+      email: "zhhadi50@gmail.com".to_string(),
+      exp: (Utc::now() + Duration::hours(1)).timestamp() as usize,
+   };
+
+   let token = encode(&Header::default(), &claims_data, &EncodingKey::from_secret("hadi".as_ref()));
+
+   match token {
+      Ok(value) => {
+         println!("TOKEN: {}", value);
+         (StatusCode::OK, value).into_response()
+      },
+      Err(_) => {
+         (StatusCode::INTERNAL_SERVER_ERROR, "something wrong happend".to_string()).into_response()
+      }
+   }
+}
+
+async fn decode_test()->Result<impl IntoResponse, StatusCode>
+{
+   let code = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiaGFkaXV6emFtYW4iLCJlbWFpbCI6InpoaGFkaTUwQGdtYWlsLmNvbSIsImV4cCI6MTc3MzgyMTgyNX0.yDcLLp1rqyaWh_ts2lmvOTEX4PzsyIt2RI5rDV5jl60";
+
+   let mut validation = Validation::default();
+   validation.validate_exp = false;
+
+   // let decode = decode::<Claims>(&code, &DecodingKey::from_secret("hadi".as_ref()), &validation).map_err(|_| StatusCode::UNAUTHORIZED)?;
+   match decode::<Claims>(
+      &code,
+      &DecodingKey::from_secret("hadi".as_ref()),
+      &validation
+   ) {
+      Ok(data) => {
+         println!("SUCCESS: {:?}", data);
+         Ok((StatusCode::OK, "ok"))
+      },
+      Err(e) => {
+         println!("ERROR: {:?}", e); 
+         Err(StatusCode::UNAUTHORIZED)
+      }
+   }
+
+   // Ok((StatusCode::OK, "decode test".to_string()))
 }
